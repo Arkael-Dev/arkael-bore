@@ -24,7 +24,7 @@ readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly PATCH_DIR="${SCRIPT_DIR}/patches"
 readonly KERNEL_DIR="${WORKSPACE}/kernel"
 readonly OUT_DIR="/home/runner/out"
-readonly AK3_DIR="${WORKSPACE}/AnyKernel3"
+readonly AK3_DIR="${WORKSPACE}/AnyKernel"
 
 readonly BOT_NAME="kinosaki-bot"
 readonly BOT_EMAIL="kinosaki-bot@users.noreply.github.com"
