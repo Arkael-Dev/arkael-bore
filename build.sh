@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Kinosaki Kernel build script
+#  Kernel build script
 # Builds a GKI 6.12 kernel (android16) with KernelSU-Next, Baseband Guard,
 # DroidSpaces, NTSync and assorted config patches, then packages AnyKernel3.
 #
