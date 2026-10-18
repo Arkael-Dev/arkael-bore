@@ -18,7 +18,7 @@ By flashing this kernel, **YOU** are choosing to make these modifications. If so
 ---
 
 ## Credits
-
+- ** clone for GKI kernel**: [Kinosaki](https://github.com/usermahiro/GKI_KernelSU_SUSFS)
 - **KernelSU**: Developed by [tiann](https://github.com/tiann/KernelSU)
 - **KernelSU-Next**: Developed by [rifsxd](https://github.com/KernelSU-Next/KernelSU-Next)
 - **Magic-KSU**: Developed by [5ec1cff](https://github.com/5ec1cff/KernelSU)
