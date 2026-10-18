@@ -12,7 +12,7 @@ set -euo pipefail
 # Constants
 # ---------------------------------------------------------------------------
 
-readonly CUSTOM_REPO="https://github.com/Cartethyiaaa/android_kernel_common-5.10"
+readonly CUSTOM_REPO="https://github.com/Arkael-Dev/arkael-kernel-a12-5.10"
 readonly ANDROID_VERSION="android16"
 readonly KERNEL_VERSION="6.12"
 readonly MANIFEST_SUBLEVEL="38"
