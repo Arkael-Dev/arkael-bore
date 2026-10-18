@@ -160,7 +160,7 @@ setup_build_environment() {
   git clone --depth=1 https://github.com/WildKernels/kernel_patches.git "${WORKSPACE}/kernel_patches"
 
   rm -rf "$AK3_DIR"
-  git clone --depth=1 https://github.com/Cartethyiaaa/AnyKernel3.git -b gki-2.0 "$AK3_DIR"
+  git clone --depth=1 https://github.com/Arkael-Dev/AnyKernel.git -b gki-2.0 "$AK3_DIR"
 
   sudo apt-get update -qq
   sudo apt-get install -y -qq dwarves libelf-dev
