@@ -366,6 +366,11 @@ _ksu_fix_selinux_hide_linkage() {
   local rel_path="${hide_file#"${KERNEL_DIR}"/}"
   log "Checking selinux_hide.c static-linkage patch state (${rel_path})"
 
+  if grep -q '^static int security_context_to_sid_with_policy' "$hide_file"; then
+    echo "selinux_hide.c already has the static-linkage fix upstream — skipping patch"
+    return 0
+  fi
+
   local dry_run_output
   if dry_run_output=$(patch -p0 --forward --dry-run "$hide_file" < "$patch_file" 2>&1); then
     log "Applying kernelsu-static.patch to ${rel_path}"
