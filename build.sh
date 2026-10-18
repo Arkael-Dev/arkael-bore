@@ -775,7 +775,7 @@ main() {
   resolve_custom_branch
 
   echo "============================================================"
-  echo " Kinosaki Kernel build — target: ${TARGET} (${VERSION}, branch ${CUSTOM_BRANCH})"
+  echo " arkael Kernel build — target: ${TARGET} (${VERSION}, branch ${CUSTOM_BRANCH})"
   echo "============================================================"
 
   setup_build_environment
