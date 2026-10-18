@@ -44,7 +44,7 @@ Usage: $0 --target <6.12|cass> [options]
 Options:
   --target <6.12|cass>     Which kernel source branch to build (required)
   --ksu-branch <ref>       KernelSU-Next branch/commit (default: next tip)
-  --kernel-name <tag>      Override branding tag (default: Kinosaki-BORE or Kinosaki-CASS)
+  --kernel-name <tag>      Override branding tag (default: Arkael-Project or Arkael-Fork)
   -h, --help                Show this help
 EOF
 }
