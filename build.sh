@@ -26,8 +26,8 @@ readonly KERNEL_DIR="${WORKSPACE}/kernel"
 readonly OUT_DIR="/home/runner/out"
 readonly AK3_DIR="${WORKSPACE}/AnyKernel"
 
-readonly BOT_NAME="kinosaki-bot"
-readonly BOT_EMAIL="kinosaki-bot@users.noreply.github.com"
+readonly BOT_NAME="arkael-bot"
+readonly BOT_EMAIL="arkael-bot@users.noreply.github.com"
 
 # ---------------------------------------------------------------------------
 # CLI parsing
@@ -251,9 +251,9 @@ set_build_timestamp() {
   if [[ -n "$KERNEL_NAME_OVERRIDE" ]]; then
     KERNEL_NAME_TAG=$(echo "$KERNEL_NAME_OVERRIDE" | sed 's/[^A-Za-z0-9._-]/-/g')
   elif [[ "$TARGET" == "6.12" ]]; then
-    KERNEL_NAME_TAG="Kinosaki-BORE"
+    KERNEL_NAME_TAG="Arkael-X"
   else
-    KERNEL_NAME_TAG="Kinosaki-CASS"
+    KERNEL_NAME_TAG="Arkael-Dev"
   fi
 
   echo "Kernel branding tag: $KERNEL_NAME_TAG"
@@ -639,7 +639,7 @@ clean_kernel_flags() {
   cd "${KERNEL_DIR}/common"
   git add -A
   git -c user.name="$BOT_NAME" -c user.email="$BOT_EMAIL" \
-    commit -m "Kinosaki: clean dirty flag" --quiet || true
+    commit -m "arkael: clean dirty flag" --quiet || true
 }
 
 # ---------------------------------------------------------------------------
