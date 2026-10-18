@@ -27,7 +27,7 @@ By flashing this kernel, **YOU** are choosing to make these modifications. If so
 - **SUSFS Module**: Developed by [sidex15](https://github.com/sidex15)
 - **Droidspaces-OSS**: Developed by [ravindu644](https://github.com/ravindu644/Droidspaces-OSS)
 - **Kernel patches**: [WildKernels/kernel_patches](https://github.com/WildKernels/kernel_patches)
-- **AnyKernel3**: [Cartethyiaaa/AnyKernel3](https://github.com/Cartethyiaaa/AnyKernel3)
+- **AnyKernel3**:  [Arkael-Dev/AnyKernel](https://github.com/Arkael-Dev/AnyKernel)
 
 Special thanks to the open-source community for their contributions!
 
