@@ -1,4 +1,4 @@
-name: Build Kinosaki Kernel
+name: Build Arkael Kernel 6.12
 
 permissions:
   contents: write
