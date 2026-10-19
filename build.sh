@@ -36,6 +36,7 @@ readonly BOT_EMAIL="arkael-bot@users.noreply.github.com"
 TARGET=""
 KSU_BRANCH=""
 KERNEL_NAME_OVERRIDE=""
+SUSFS=0
 
 usage() {
   cat <<EOF
@@ -45,6 +46,7 @@ Options:
   --target <6.12|cass>     Which kernel source branch to build (required)
   --ksu-branch <ref>       KernelSU-Next branch/commit (default: next tip)
   --kernel-name <tag>      Override branding tag (default: Arkael-Project or Arkael-Fork)
+  --susfs                  Pasang SUSFS gki-android16-6.12 (hanya --target 6.12)
   -h, --help                Show this help
 EOF
 }
@@ -55,6 +57,7 @@ parse_args() {
       --target)       TARGET="$2"; shift 2 ;;
       --ksu-branch)   KSU_BRANCH="$2"; shift 2 ;;
       --kernel-name)  KERNEL_NAME_OVERRIDE="$2"; shift 2 ;;
+      --susfs)        SUSFS=1; shift ;;
       -h|--help)      usage; exit 0 ;;
       *)
         echo "Unknown argument: $1" >&2
@@ -534,6 +537,37 @@ setup_ntsync() {
   apply_kconfig "CONFIG_NTSYNC=y"
 }
 
+
+# ---------------------------------------------------------------------------
+# Stage: SUSFS (opsional, --susfs, hanya target 6.12)
+# ---------------------------------------------------------------------------
+
+setup_susfs() {
+  (( SUSFS )) || return 0
+  [[ "$TARGET" == "6.12" ]] || die "--susfs hanya didukung untuk --target 6.12 (patch gki-android16-6.12)"
+
+  local sdir="${PATCH_DIR}/susfs"
+  [[ -f "${sdir}/apply-susfs.sh" ]] || die "${sdir}/apply-susfs.sh tidak ditemukan"
+
+  log "Applying SUSFS (gki-android16-6.12)"
+  bash "${sdir}/apply-susfs.sh" "${KERNEL_DIR}/common" "${KERNEL_DIR}/KernelSU-Next" \
+    || die "SUSFS gagal dipasang (patch tidak cocok dengan source kernel)"
+
+  FILE_NAME="${FILE_NAME}-susfs"
+  KERNEL_NAME_TAG="${KERNEL_NAME_TAG}-susfs"
+
+  local cfgs
+  cfgs="$(grep -RhoE '^config KSU_SUSFS[A-Z0-9_]*' \
+            "${KERNEL_DIR}/common" "${KERNEL_DIR}/KernelSU-Next" \
+            --include='Kconfig*' 2>/dev/null \
+          | awk '{print "CONFIG_"$2"=y"}' | sort -u || true)"
+  if [[ -n "$cfgs" ]]; then
+    echo "SUSFS kconfig:"; echo "$cfgs"
+    apply_kconfig "$cfgs"
+  else
+    warn "Tidak ada symbol KSU_SUSFS* di Kconfig; SUSFS terpasang tanpa config tambahan"
+  fi
+}
 # ---------------------------------------------------------------------------
 # Stage: misc patches (ptrace, unicode, extra kconfig)
 # ---------------------------------------------------------------------------
@@ -789,6 +823,7 @@ main() {
   extract_sublevel_and_name
   apply_kernel_fixes
   setup_kernelsu
+  setup_susfs
   setup_bbg
   setup_networking
   setup_droidspaces

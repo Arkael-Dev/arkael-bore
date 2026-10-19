@@ -40,3 +40,14 @@ Flashing this kernel will void your warranty, and there is always a risk of bric
 - Understand the risks before proceeding
 
 **Proceed at your own risk!**
+
+---
+
+## SUSFS build (opsional)
+
+Patch SUSFS untuk gki-android16-6.12 ada di patches/susfs/ (sumber: https://gitlab.com/simonpunk/susfs4ksu/-/tree/gki-android16-6.12).
+Default mati; aktifkan hanya untuk target 6.12:
+
+    ./build.sh --target 6.12 --susfs
+
+Hasil zip diberi akhiran -susfs. Build berhenti dengan pesan jelas jika patch tidak cocok dengan source kernel.
