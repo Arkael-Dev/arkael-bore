@@ -12,12 +12,15 @@ fi
 
 P="$HERE/50_add_susfs_in_gki-android16-6.12.patch"
 echo "[susfs] apply patch kernel (fuzz 3)..."
-if ! patch -p1 -d "$K" -F3 -l --no-backup-if-mismatch < "$P"; then
+FP="$(mktemp)"
+python3 "$HERE/filter-patch.py" "$P" "$FP"
+if ! patch -p1 -d "$K" -F3 -l --no-backup-if-mismatch < "$FP"; then
   echo "[susfs] hunk gagal, isi .rej:" >&2
   find "$K" -name '*.rej' -print -exec cat {} \; >&2
   echo "[susfs] FATAL: patch kernel tidak cocok" >&2
   exit 1
 fi
+python3 "$HERE/fix-task-mmu.py" "$K/fs/proc/task_mmu.c"
 cp "$HERE/susfs.c" "$K/fs/susfs.c"
 cp "$HERE/susfs.h" "$HERE/susfs_def.h" "$K/include/linux/"
 echo "[susfs] patch kernel terpasang"
