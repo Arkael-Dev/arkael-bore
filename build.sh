@@ -565,6 +565,7 @@ setup_susfs() {
   local sdir="${PATCH_DIR}/susfs"
   [[ -f "${sdir}/apply-susfs.sh" ]] || die "${sdir}/apply-susfs.sh tidak ditemukan"
 
+bash "${GITHUB_WORKSPACE:-$PWD}/patches/ksu-fix-sched.sh"
   log "Applying SUSFS (gki-android16-6.12)"
   bash "${sdir}/apply-susfs.sh" "${KERNEL_DIR}/common" \
     || die "SUSFS gagal dipasang (patch tidak cocok dengan source kernel)"
