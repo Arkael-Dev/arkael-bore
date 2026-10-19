@@ -28,6 +28,10 @@ on:
         type: string
         required: false
         default: ""
+      susfs:
+        description: "Pasang SUSFS gki-android16-6.12 (hanya target 6.12)"
+        type: boolean
+        default: false
       kernel_name:
         description: "Kernel name"
         type: string
@@ -94,6 +98,7 @@ jobs:
           ARGS=(--target "${{ matrix.target }}")
           [[ -n "${{ inputs.ksu_branch }}" ]] && ARGS+=(--ksu-branch "${{ inputs.ksu_branch }}")
           [[ -n "${{ inputs.kernel_name }}" ]] && ARGS+=(--kernel-name "${{ inputs.kernel_name }}")
+          [[ "${{ inputs.susfs }}" == "true" && "${{ matrix.target }}" == "6.12" ]] && ARGS+=(--susfs)
 
           ./build.sh "${ARGS[@]}"
 
