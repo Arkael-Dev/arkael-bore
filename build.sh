@@ -406,6 +406,9 @@ setup_kernelsu() {
 
   (cd KernelSU-Next/kernel && _ksu_stamp_version)
 
+  # fix task_pid_nr undeclared (samsung_kdp.c), harus sebelum bazel build
+  bash "${GITHUB_WORKSPACE:-$PWD}/patches/ksu-fix-sched.sh" "${KERNEL_DIR}"
+
   if (( SUSFS )); then
     # Fork bisa punya selinux_hide.c yang berbeda; jangan matikan build karenanya
     ( _ksu_fix_selinux_hide_linkage ) || warn "kernelsu-static.patch dilewati untuk fork SUSFS"
@@ -565,7 +568,6 @@ setup_susfs() {
   local sdir="${PATCH_DIR}/susfs"
   [[ -f "${sdir}/apply-susfs.sh" ]] || die "${sdir}/apply-susfs.sh tidak ditemukan"
 
-bash "${GITHUB_WORKSPACE:-$PWD}/patches/ksu-fix-sched.sh"
   log "Applying SUSFS (gki-android16-6.12)"
   bash "${sdir}/apply-susfs.sh" "${KERNEL_DIR}/common" \
     || die "SUSFS gagal dipasang (patch tidak cocok dengan source kernel)"
