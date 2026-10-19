@@ -732,7 +732,6 @@ _run_bazel_build() {
   tools/bazel build \
     --config=fast \
     --config=stamp \
-    --kconfig_check=none \
     --disk_cache="${HOME}/.cache/bazel" \
     //common:kernel_aarch64/Image \
   || tools/bazel build \
