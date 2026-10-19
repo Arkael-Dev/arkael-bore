@@ -387,15 +387,31 @@ _ksu_fix_selinux_hide_linkage() {
 }
 
 setup_kernelsu() {
-  log "Setting up KernelSU-Next (official next)"
   cd "$KERNEL_DIR"
 
-  curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s next
-
-  _ksu_checkout_branch
+  if (( SUSFS )); then
+    # Fork dengan SUSFS bawaan (menggantikan patch KernelSU dari simonpunk)
+    local ksu_fork="https://github.com/pershoot/KernelSU-Next.git"
+    local ksu_fork_ref="${KSU_BRANCH:-dev-susfs}"
+    log "Setting up KernelSU-Next (pershoot fork @ ${ksu_fork_ref}, SUSFS)"
+    rm -rf KernelSU-Next
+    git clone --branch "$ksu_fork_ref" "$ksu_fork" KernelSU-Next \
+      || die "gagal clone ${ksu_fork} (${ksu_fork_ref})"
+    curl -LSs "https://raw.githubusercontent.com/pershoot/KernelSU-Next/${ksu_fork_ref}/kernel/setup.sh" | bash -s "$ksu_fork_ref"
+  else
+    log "Setting up KernelSU-Next (official next)"
+    curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s next
+    _ksu_checkout_branch
+  fi
 
   (cd KernelSU-Next/kernel && _ksu_stamp_version)
-  _ksu_fix_selinux_hide_linkage
+
+  if (( SUSFS )); then
+    # Fork bisa punya selinux_hide.c yang berbeda; jangan matikan build karenanya
+    ( _ksu_fix_selinux_hide_linkage ) || warn "kernelsu-static.patch dilewati untuk fork SUSFS"
+  else
+    _ksu_fix_selinux_hide_linkage
+  fi
 
   apply_kconfig "CONFIG_KSU=y"
   echo "KSU version: $KSU_VERSION (tag: $KSU_GIT_TAG)"
@@ -550,7 +566,7 @@ setup_susfs() {
   [[ -f "${sdir}/apply-susfs.sh" ]] || die "${sdir}/apply-susfs.sh tidak ditemukan"
 
   log "Applying SUSFS (gki-android16-6.12)"
-  bash "${sdir}/apply-susfs.sh" "${KERNEL_DIR}/common" "${KERNEL_DIR}/KernelSU-Next" \
+  bash "${sdir}/apply-susfs.sh" "${KERNEL_DIR}/common" \
     || die "SUSFS gagal dipasang (patch tidak cocok dengan source kernel)"
 
   FILE_NAME="${FILE_NAME}-susfs"
