@@ -11,7 +11,7 @@ if [ -f "$K/fs/susfs.c" ]; then
 fi
 
 echo "[susfs] cek patch kernel..."
-if ! patch -p1 -d "$K" --dry-run -s < "$HERE/50_add_susfs_in_gki-android16-6.12.patch"; then
+if ! patch -p1 -d "$K" --dry-run < "$HERE/50_add_susfs_in_gki-android16-6.12.patch"; then
   echo "[susfs] FATAL: patch kernel tidak cocok dengan source ini" >&2; exit 1
 fi
 cp "$HERE/susfs.c" "$K/fs/susfs.c"
