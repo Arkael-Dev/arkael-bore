@@ -23,6 +23,13 @@ on:
           - "6.12"
           - "cass"
         default: "Both (6.12 + cass)"
+      susfs:
+        description: "SUSFS"
+        type: choice
+        options:
+          - "susfs"
+          - "no-susfs"
+        default: "susfs"
       ksu_branch:
         description: "pershoot/KernelSU-Next branch, tag or commit (empty = dev-susfs)"
         type: string
@@ -94,6 +101,7 @@ jobs:
           ARGS=(--target "${{ matrix.target }}")
           [[ -n "${{ inputs.ksu_branch }}" ]] && ARGS+=(--ksu-branch "${{ inputs.ksu_branch }}")
           [[ -n "${{ inputs.kernel_name }}" ]] && ARGS+=(--kernel-name "${{ inputs.kernel_name }}")
+          [[ "${{ inputs.susfs || 'susfs' }}" == "no-susfs" ]] && ARGS+=(--no-susfs) || ARGS+=(--susfs)
 
           ./build.sh "${ARGS[@]}"
 
@@ -154,6 +162,7 @@ jobs:
           body: |
             - KernelSU-Next (pershoot): `${{ inputs.ksu_branch || 'dev-susfs' }}`
             - Targets built: ${{ inputs.targets || 'Both (6.12 + cass)' }}
+            - SUSFS: ${{ inputs.susfs || 'susfs' }}
           draft: false
           prerelease: ${{ inputs.release_type == 'Pre-Release' }}
           files: release-assets/*.zip
