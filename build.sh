@@ -42,6 +42,7 @@ readonly BOT_EMAIL="arkael-bot@users.noreply.github.com"
 TARGET=""
 KSU_BRANCH=""
 KERNEL_NAME_OVERRIDE=""
+SUSFS_ENABLED="true"
 
 usage() {
   cat <<EOF
@@ -51,6 +52,7 @@ Options:
   --target <6.12|cass>     Which kernel source branch to build (required)
   --ksu-branch <ref>       pershoot/KernelSU-Next branch/tag/commit (default: ${KSU_DEFAULT_REF})
   --kernel-name <tag>      Override branding tag (default: Arkael-Project or Arkael-Fork)
+  --susfs / --no-susfs     Enable or disable the SUSFS kernel patch (default: --susfs)
   -h, --help                Show this help
 EOF
 }
@@ -61,6 +63,8 @@ parse_args() {
       --target)       TARGET="$2"; shift 2 ;;
       --ksu-branch)   KSU_BRANCH="$2"; shift 2 ;;
       --kernel-name)  KERNEL_NAME_OVERRIDE="$2"; shift 2 ;;
+      --susfs)        SUSFS_ENABLED="true"; shift ;;
+      --no-susfs)     SUSFS_ENABLED="false"; shift ;;
       -h|--help)      usage; exit 0 ;;
       *)
         echo "Unknown argument: $1" >&2
@@ -450,7 +454,9 @@ setup_kernelsu() {
   _ksu_apply_manager_patch
 
   apply_kconfig "CONFIG_KSU=y"
-  _susfs_apply_kernel_patch
+  if [[ "$SUSFS_ENABLED" == "true" ]]; then
+    _susfs_apply_kernel_patch
+  fi
   _ksu_configure_susfs
   echo "KSU version: $KSU_VERSION (tag: $KSU_GIT_TAG)"
 }
