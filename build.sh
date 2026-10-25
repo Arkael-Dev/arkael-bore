@@ -106,7 +106,7 @@ KSU_GIT_TAG=""
 
 resolve_custom_branch() {
   if [[ "$TARGET" == "6.12" ]]; then
-    CUSTOM_BRANCH="6.12"
+    CUSTOM_BRANCH="6.12-linux"
   else
     CUSTOM_BRANCH="cass"
   fi
