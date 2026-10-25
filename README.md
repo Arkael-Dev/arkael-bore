@@ -26,8 +26,9 @@
 | | Feature | Details |
 |---|---|---|
 | 🔑 | **KernelSU-Next** | Built from [pershoot's `dev-susfs` fork](https://github.com/pershoot/KernelSU-Next/tree/dev-susfs) |
-| 🧩 | **Multi-manager support** | 9 manager signatures accepted, see [Supported managers](#-supported-managers) |
-| 🛡️ | **Baseband Guard** | LSM that protects the modem / baseband partitions |
+| 🛡️ | **SUSFS** | simonpunk's `gki-android16-6.12` SUSFS patch, applied to the kernel and enabled with KernelSU-Next (`CONFIG_KSU_SUSFS=y`) |
+| 🧩 | **Multi-manager support** | 10 manager signatures accepted, see [Supported managers](#-supported-managers) |
+| 🔒 | **Baseband Guard** | LSM that protects the modem / baseband partitions |
 | 📦 | **Droidspaces** | Kernel options for running Linux containers |
 | 🍷 | **NTSync** | NT synchronization primitives for Wine / Proton |
 | 🌐 | **Networking** | BBR (default), CUBIC, BIC, Westwood, H-TCP · FQ / FQ_CODEL / CAKE · WireGuard · ipset · extra netfilter modules · CIFS client |
@@ -36,14 +37,14 @@
 | 📲 | **AnyKernel3 installer** | One zip, with a choice between *Normal* and *Bypass* image at flash time |
 
 > [!NOTE]
-> **SUSFS** is not forced on. KernelSU-Next is built from the `dev-susfs` branch, and the build turns SUSFS on only when the kernel source tree actually contains the SUSFS sources. Otherwise it is built with SUSFS disabled.
+> **SUSFS is on for the 6.12 build.** The build applies [`patches/susfs-gki-6.12/`](patches/susfs-gki-6.12) (simonpunk's `gki-android16-6.12` SUSFS, pinned to `3ff9fd3`) to `kernel/common` before KernelSU-Next is configured. If the SUSFS headers are missing from the tree, the build turns `CONFIG_KSU_SUSFS` off and prints a warning. If the patch itself does not apply, the build fails.
 
 ## 🧩 Supported managers
 
 The kernel accepts these manager apps (signature list is applied by
 [`patches/ksun-add-more-managers-support.patch`](patches/ksun-add-more-managers-support.patch)):
 
-`KernelSU-Next` · `KernelSU-Next (pershoot)` · `KOWSU` · `MamboSU` · `RKSU` · `WildKSU` · `VorteXSU`
+`KernelSU-Next` · `KernelSU-Next (pershoot)` · `KOWSU` · `MamboSU` · `RKSU` · `WildKSU` · `VorteXSU` · `FinaSU`
 
 ## 📲 Flashing
 
@@ -78,7 +79,7 @@ Locally (written for an Ubuntu runner, it uses `sudo apt-get` and `/home/runner/
 ```
 
 The script pulls the AOSP `android16-6.12` manifest, swaps `kernel/common` for
-[`arkael-kernel-a12-5.10`](https://github.com/Arkael-Dev/arkael-kernel-a12-5.10) (branch `6.12` or `cass`),
+[`arkael-kernel-a12-5.10`](https://github.com/Arkael-Dev/arkael-kernel-a12-5.10) (branch `6.12-linux` for `6.12`, `cass` for `cass`),
 applies the features above, builds both the Normal and the Bypass image, and packs them into an AnyKernel3 zip.
 
 <details>
@@ -90,7 +91,8 @@ applies the features above, builds both the Normal and the Bypass image, and pac
 ├── assets/banner.svg              # animated README banner
 ├── patches/
 │   ├── anykernel3-bypass.patch    # Normal / Bypass image menu for the installer
-│   └── ksun-add-more-managers-support.patch   # extra manager signatures
+│   ├── ksun-add-more-managers-support.patch   # extra manager signatures
+│   └── susfs-gki-6.12/            # SUSFS for gki-android16-6.12 (kernel side)
 └── .github/workflows/build.yml    # "Build Arkael Kernel 6.12" workflow
 ```
 
