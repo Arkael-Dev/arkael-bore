@@ -21,6 +21,7 @@ By flashing this kernel, **YOU** are choosing to make these modifications. If so
 - **clone for GKI kernel**: [Kinosaki](https://github.com/usermahiro/GKI_KernelSU_SUSFS)
 - **KernelSU**: Developed by [tiann](https://github.com/tiann/KernelSU)
 - **KernelSU-Next**: Developed by [rifsxd](https://github.com/KernelSU-Next/KernelSU-Next)
+- **KernelSU-Next (dev-susfs)**: Maintained by [pershoot](https://github.com/pershoot/KernelSU-Next)
 - **Magic-KSU**: Developed by [5ec1cff](https://github.com/5ec1cff/KernelSU)
 - **SUSFS**: Developed by [simonpunk](https://gitlab.com/simonpunk/susfs4ksu.git)
 - **Baseband-guard (BBG)**: Developed by [vc-teahouse](https://github.com/vc-teahouse/Baseband-guard)

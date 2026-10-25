@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 #
 # Kernel build script
-# Builds a GKI 6.12 kernel (android16) with KernelSU-Next, Baseband Guard,
-# DroidSpaces, NTSync and assorted config patches, then packages AnyKernel3.
+# Builds a GKI 6.12 kernel (android16) with KernelSU-Next (pershoot dev-susfs
+# fork + extra manager signatures), Baseband Guard, DroidSpaces, NTSync and
+# assorted config patches, then packages AnyKernel3.
 #
 # Usage: ./build.sh --target <6.12|cass> [options]
 
@@ -26,6 +27,11 @@ readonly KERNEL_DIR="${WORKSPACE}/kernel"
 readonly OUT_DIR="/home/runner/out"
 readonly AK3_DIR="${WORKSPACE}/AnyKernel"
 
+# KernelSU-Next source: pershoot's fork, dev-susfs branch.
+readonly KSU_REPO_URL="https://github.com/pershoot/KernelSU-Next.git"
+readonly KSU_DEFAULT_REF="dev-susfs"
+readonly KSU_SETUP_URL="https://raw.githubusercontent.com/pershoot/KernelSU-Next/${KSU_DEFAULT_REF}/kernel/setup.sh"
+
 readonly BOT_NAME="arkael-bot"
 readonly BOT_EMAIL="arkael-bot@users.noreply.github.com"
 
@@ -43,7 +49,7 @@ Usage: $0 --target <6.12|cass> [options]
 
 Options:
   --target <6.12|cass>     Which kernel source branch to build (required)
-  --ksu-branch <ref>       KernelSU-Next branch/commit (default: next tip)
+  --ksu-branch <ref>       pershoot/KernelSU-Next branch/tag/commit (default: ${KSU_DEFAULT_REF})
   --kernel-name <tag>      Override branding tag (default: Arkael-Project or Arkael-Fork)
   -h, --help                Show this help
 EOF
@@ -125,6 +131,16 @@ apply_kconfig() {
     else
       key="$line"
       value="y"
+    fi
+
+    # "KEY=n" is written the way kconfig expects it: "# KEY is not set".
+    if [[ "$value" == "n" ]]; then
+      if grep -q "^${key}=" "$defconfig"; then
+        sed -i "s|^${key}=.*|# ${key} is not set|g" "$defconfig"
+      elif ! grep -q "^# ${key} is not set" "$defconfig"; then
+        echo "# ${key} is not set" >> "$defconfig"
+      fi
+      continue
     fi
 
     if grep -q "^${key}=" "$defconfig"; then
@@ -308,18 +324,28 @@ apply_kernel_fixes() {
 # Stage: KernelSU-Next
 # ---------------------------------------------------------------------------
 
-_ksu_checkout_branch() {
-  local ksu_repo="https://github.com/KernelSU-Next/KernelSU-Next.git"
-  local ksu_input="${KSU_BRANCH:-next}"
+# Resolved ref actually used for KernelSU-Next (flag value or default).
+_ksu_ref() { echo "${KSU_BRANCH:-$KSU_DEFAULT_REF}"; }
 
-  [[ -z "$KSU_BRANCH" || "$KSU_BRANCH" == "next" ]] && return
+# pershoot's setup.sh ends with `git checkout "$1" && ... || echo "Checkout
+# default branch"`, i.e. a bad ref is NOT an error — it silently leaves the
+# clone on the repo's default branch ("dev", which has no SUSFS work). Verify
+# that HEAD really is the requested ref so a typo can't produce a wrong build.
+_ksu_verify_checkout() {
+  local ref="$1"
+  local ksu_dir="${KERNEL_DIR}/KernelSU-Next"
+  local head want
 
-  git -C KernelSU-Next/kernel fetch --depth=50 origin "$ksu_input"
-  if git ls-remote --heads "$ksu_repo" "$ksu_input" | grep -q .; then
-    git -C KernelSU-Next/kernel checkout "origin/${ksu_input}"
-  else
-    git -C KernelSU-Next/kernel checkout "$ksu_input"
-  fi
+  head="$(git -C "$ksu_dir" rev-parse HEAD)"
+  want="$(git -C "$ksu_dir" rev-parse --verify -q "refs/remotes/origin/${ref}^{commit}" \
+          || git -C "$ksu_dir" rev-parse --verify -q "${ref}^{commit}" \
+          || true)"
+
+  [[ -n "$want" ]] || die "KernelSU-Next ref '${ref}' not found in ${KSU_REPO_URL}"
+  [[ "$head" == "$want" ]] \
+    || die "KernelSU-Next is at ${head:0:12}, expected '${ref}' (${want:0:12}) — setup.sh fell back to its default branch"
+
+  echo "KernelSU-Next: ${ref} @ ${head:0:12}"
 }
 
 _ksu_stamp_version() {
@@ -332,69 +358,76 @@ _ksu_stamp_version() {
   sed -i "s/^KSU_VERSION_TAG_FALLBACK := v0.0.1$/KSU_VERSION_TAG_FALLBACK := ${KSU_GIT_TAG}/" Kbuild
 }
 
-# Fixes the linkage mismatch in selinux_hide.c: forward declarations are
-# non-static (extern) while the actual definitions further down the file
-# are static, which GCC/Clang rejects ("static declaration follows
-# non-static declaration"). Applied via a patch file (not sed) so that if
-# upstream KernelSU-Next reformats the file, this fails loudly instead of
-# silently no-op'ing.
+# Extends KSU_NEXT_MANAGER_LIST in kernel/Kbuild so more manager apps
+# (KSUN, pershoot, KOWSU, MamboSU, RKSU, WildKSU, VorteXSU) are accepted.
+# pershoot's dev-susfs only reads that one list (kernel/manager/apk_sign.c),
+# so this single patch is all that is needed.
 #
-# IMPORTANT: KernelSU-Next's setup.sh places (copies, or in some versions
-# symlinks) the driver source under kernel/common/drivers/kernelsu/feature/
-# — that is the file the compiler actually reads. The raw checkout at
-# KernelSU-Next/kernel/feature/ may be a separate copy setup.sh no longer
-# touches once it's been placed into common/. Patch the compiled location
-# first; fall back to the raw checkout only if that path doesn't exist.
-#
-# IDEMPOTENCY: upstream KernelSU-Next has, at times, shipped this fix
-# itself. A plain `patch` against an already-fixed file prompts
-# "Reversed (or previously applied) patch detected! Assume -R? [n]" — with
-# no interactive stdin (CI) that defaults to "no" and patch exits non-zero,
-# killing the build over a fix that's already present. We dry-run first to
-# tell "already applied" (skip, not an error) apart from a genuine mismatch
-# (fail loud, as intended).
-_ksu_fix_selinux_hide_linkage() {
-  local patch_file="${PATCH_DIR}/kernelsu-static.patch"
+# The patch is applied to the KernelSU-Next checkout (KernelSU-Next/kernel/Kbuild);
+# drivers/kernelsu is a symlink to that directory, so it is the file the
+# compiler actually reads. Idempotent: a tree that already carries the extended
+# list is skipped; a genuine mismatch fails loudly instead of building a
+# kernel with the wrong manager list.
+_ksu_apply_manager_patch() {
+  local patch_file="${PATCH_DIR}/ksun-add-more-managers-support.patch"
+  local ksu_dir="${KERNEL_DIR}/KernelSU-Next"
+  local kbuild="${ksu_dir}/kernel/Kbuild"
+  local marker="# KSUN, pershoot, KOWSU, MamboSU, RKSU, WildKSU, VorteXSU"
+
   [[ -f "$patch_file" ]] || die "${patch_file} not found"
+  [[ -f "$kbuild" ]]     || die "${kbuild} not found"
 
-  local hide_file="${KERNEL_DIR}/common/drivers/kernelsu/feature/selinux_hide.c"
-  if [[ ! -f "$hide_file" ]]; then
-    hide_file="${KERNEL_DIR}/KernelSU-Next/kernel/feature/selinux_hide.c"
-  fi
-  [[ -f "$hide_file" ]] || die "selinux_hide.c not found in any known location"
-
-  local rel_path="${hide_file#"${KERNEL_DIR}"/}"
-  log "Checking selinux_hide.c static-linkage patch state (${rel_path})"
-
-  if grep -q '^static int security_context_to_sid_with_policy' "$hide_file"; then
-    echo "selinux_hide.c already has the static-linkage fix upstream — skipping patch"
+  if grep -qF "$marker" "$kbuild"; then
+    echo "Kbuild already carries the extended manager list — skipping patch"
     return 0
   fi
 
-  local dry_run_output
-  if dry_run_output=$(patch -p0 --forward --dry-run "$hide_file" < "$patch_file" 2>&1); then
-    log "Applying kernelsu-static.patch to ${rel_path}"
-    patch -p0 --forward "$hide_file" < "$patch_file"
-  elif grep -q "Reversed (or previously applied)" <<<"$dry_run_output"; then
-    echo "selinux_hide.c already has the static-linkage fix upstream — skipping patch"
+  log "Applying ksun-add-more-managers-support.patch"
+  (cd "$ksu_dir" && patch -p1 --forward --dry-run < "$patch_file" >/dev/null) \
+    || die "ksun-add-more-managers-support.patch does not apply to ${KSU_REPO_URL} @ $(_ksu_ref)"
+  (cd "$ksu_dir" && patch -p1 --forward < "$patch_file")
+
+  grep -qF "$marker" "$kbuild" || die "manager list not updated in ${kbuild} after patching"
+
+  local count
+  count=$(grep '^KSU_NEXT_MANAGER_LIST :=' "$kbuild" | grep -o '0x[0-9a-fA-F]*:' | wc -l)
+  echo "KSU_NEXT_MANAGER_LIST now has ${count} manager signature(s)"
+}
+
+# dev-susfs enables CONFIG_KSU_SUSFS by default, and with it the KernelSU code
+# #includes <linux/susfs.h> / <linux/susfs_def.h> from the kernel tree. Those
+# only exist if SUSFS has been patched into kernel/common. If they are missing
+# the build would break, so turn the option off (KernelSU then uses its
+# kprobe-based hooks, which gki_defconfig supports).
+_ksu_configure_susfs() {
+  local common="${KERNEL_DIR}/common"
+
+  if [[ -f "${common}/include/linux/susfs.h" && -f "${common}/include/linux/susfs_def.h" ]]; then
+    echo "SUSFS sources found in kernel/common — leaving CONFIG_KSU_SUSFS at its default (y)"
   else
-    echo "$dry_run_output" >&2
-    die "kernelsu-static.patch failed to apply to ${rel_path}"
+    warn "SUSFS sources not found in kernel/common — building with CONFIG_KSU_SUSFS disabled"
+    apply_kconfig "CONFIG_KSU_SUSFS=n"
   fi
 }
 
 setup_kernelsu() {
-  log "Setting up KernelSU-Next (official next)"
+  local ksu_ref
+  ksu_ref="$(_ksu_ref)"
+
+  log "Setting up KernelSU-Next (pershoot, ${ksu_ref})"
   cd "$KERNEL_DIR"
 
-  curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s next
+  curl -LSs "$KSU_SETUP_URL" | bash -s "$ksu_ref"
+  _ksu_verify_checkout "$ksu_ref"
 
-  _ksu_checkout_branch
-
-  (cd KernelSU-Next/kernel && _ksu_stamp_version)
-  _ksu_fix_selinux_hide_linkage
+  # No subshell here: KSU_VERSION / KSU_GIT_TAG are globals reported at the end.
+  cd "${KERNEL_DIR}/KernelSU-Next/kernel"
+  _ksu_stamp_version
+  cd "$KERNEL_DIR"
+  _ksu_apply_manager_patch
 
   apply_kconfig "CONFIG_KSU=y"
+  _ksu_configure_susfs
   echo "KSU version: $KSU_VERSION (tag: $KSU_GIT_TAG)"
 }
 
