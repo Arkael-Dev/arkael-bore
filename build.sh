@@ -410,6 +410,29 @@ _ksu_configure_susfs() {
   fi
 }
 
+# SUSFS kernel-side patch (simonpunk/susfs4ksu gki-android16-6.12 @ 3ff9fd3).
+# KernelSU-side patch is NOT needed: pershoot dev-susfs already integrates it.
+_susfs_apply_kernel_patch() {
+  local src="${PATCH_DIR}/susfs-gki-6.12"
+  local common="${KERNEL_DIR}/common"
+  local patch_file="${src}/50_add_susfs_in_gki-android16-6.12.patch"
+
+  [[ -f "$patch_file" ]] || die "${patch_file} not found"
+  if grep -q 'susfs' "${common}/fs/Makefile" 2>/dev/null; then
+    echo "SUSFS already patched into kernel/common — skipping"
+    return 0
+  fi
+
+  log "Applying SUSFS kernel patch (gki-android16-6.12)"
+  (cd "$common" && patch -p1 --forward --dry-run < "$patch_file" >/dev/null) \
+    || die "SUSFS patch does not apply to ${common}"
+  cp "${src}/fs/susfs.c" "${common}/fs/"
+  cp "${src}/include/linux/susfs.h" "${src}/include/linux/susfs_def.h" "${common}/include/linux/"
+  (cd "$common" && patch -p1 --forward < "$patch_file")
+  [[ -f "${common}/fs/susfs.c" && -f "${common}/include/linux/susfs_def.h" ]] \
+    || die "SUSFS files missing after patching"
+}
+
 setup_kernelsu() {
   local ksu_ref
   ksu_ref="$(_ksu_ref)"
@@ -427,6 +450,7 @@ setup_kernelsu() {
   _ksu_apply_manager_patch
 
   apply_kconfig "CONFIG_KSU=y"
+  _susfs_apply_kernel_patch
   _ksu_configure_susfs
   echo "KSU version: $KSU_VERSION (tag: $KSU_GIT_TAG)"
 }
