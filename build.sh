@@ -383,7 +383,7 @@ _ksu_apply_manager_patch() {
   fi
 
   log "Applying ksun-add-more-managers-support.patch"
-  (cd "$ksu_dir" && patch -p1 --forward --dry-run < "$patch_file" >/dev/null) \
+  (cd "$ksu_dir" && patch -p1 --forward --dry-run < "$patch_file") \
     || die "ksun-add-more-managers-support.patch does not apply to ${KSU_REPO_URL} @ $(_ksu_ref)"
   (cd "$ksu_dir" && patch -p1 --forward < "$patch_file")
 
@@ -424,7 +424,7 @@ _susfs_apply_kernel_patch() {
   fi
 
   log "Applying SUSFS kernel patch (gki-android16-6.12)"
-  (cd "$common" && patch -p1 --forward --dry-run < "$patch_file" >/dev/null) \
+  (cd "$common" && patch -p1 --forward --dry-run < "$patch_file") \
     || die "SUSFS patch does not apply to ${common}"
   cp "${src}/fs/susfs.c" "${common}/fs/"
   cp "${src}/include/linux/susfs.h" "${src}/include/linux/susfs_def.h" "${common}/include/linux/"
