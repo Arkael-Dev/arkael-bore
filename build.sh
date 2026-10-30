@@ -363,7 +363,7 @@ _ksu_stamp_version() {
 }
 
 # Extends KSU_NEXT_MANAGER_LIST in kernel/Kbuild so more manager apps
-# (KSUN, pershoot, KOWSU, MamboSU, RKSU, WildKSU, VorteXSU) are accepted.
+# (KSUN, pershoot, KOWSU, MamboSU, RKSU, WildKSU, FinaSU) are accepted.
 # pershoot's dev-susfs only reads that one list (kernel/manager/apk_sign.c),
 # so this single patch is all that is needed.
 #
@@ -376,7 +376,7 @@ _ksu_apply_manager_patch() {
   local patch_file="${PATCH_DIR}/ksun-add-more-managers-support.patch"
   local ksu_dir="${KERNEL_DIR}/KernelSU-Next"
   local kbuild="${ksu_dir}/kernel/Kbuild"
-  local marker="# KSUN, pershoot, KOWSU, MamboSU, RKSU, WildKSU, VorteXSU"
+  local marker="# KSUN, pershoot, KOWSU, MamboSU, RKSU, WildKSU, FinaSU"
 
   [[ -f "$patch_file" ]] || die "${patch_file} not found"
   [[ -f "$kbuild" ]]     || die "${kbuild} not found"
