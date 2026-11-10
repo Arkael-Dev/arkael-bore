@@ -101,7 +101,7 @@ jobs:
           ARGS=(--target "${{ matrix.target }}")
           [[ -n "${{ inputs.ksu_branch }}" ]] && ARGS+=(--ksu-branch "${{ inputs.ksu_branch }}")
           [[ -n "${{ inputs.kernel_name }}" ]] && ARGS+=(--kernel-name "${{ inputs.kernel_name }}")
-          [[ "${{ inputs.susfs }}" == "susfs" && "${{ matrix.target }}" == "6.12" ]] && ARGS+=(--susfs)
+          [[ "${{ inputs.susfs }}" == "susfs" ]] && ARGS+=(--susfs)
 
           ./build.sh "${ARGS[@]}"
 
