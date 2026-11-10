@@ -37,7 +37,7 @@
 | 📲 | **AnyKernel3 installer** | One zip, with a choice between *Normal* and *Bypass* image at flash time |
 
 > [!NOTE]
-> **SUSFS is on for the 6.12 build.** The build applies [`patches/susfs-gki-6.12/`](patches/susfs-gki-6.12) (simonpunk's `gki-android16-6.12` SUSFS, pinned to `3ff9fd3`) to `kernel/common` before KernelSU-Next is configured. If the SUSFS headers are missing from the tree, the build turns `CONFIG_KSU_SUSFS` off and prints a warning. If the patch itself does not apply, the build fails.
+> **SUSFS is on for the `6.12-susfs` build.** The kernel branch `6.12-susfs24` already carries simonpunk's `gki-android16-6.12` SUSFS (v2.4.0) in its source, so [`patches/susfs/apply-susfs.sh`](patches/susfs/apply-susfs.sh) detects it and skips patching. KernelSU-Next is then built from pershoot's `dev-susfs` and the `CONFIG_KSU_SUSFS*` options are enabled. The plain `6.12` target still uses the bundled SUSFS v2.3.0 files, which are too old for the latest `dev-susfs`, so use `6.12-susfs` with SUSFS on.
 
 ## 🧩 Supported managers
 
@@ -68,9 +68,9 @@ Builds run on GitHub Actions: **Actions → Build Arkael Kernel 6.12 → Run wor
 | Input | Meaning |
 |---|---|
 | **Release type** | `Action` (artifact only) · `Pre-Release` · `Release` (creates tag `r<N>` automatically) |
-| **Branch** | `6.12`, `cass`, or both |
+| **Branch** | `6.12`, `6.12-susfs`, or both |
 | **ksu_branch** | `pershoot/KernelSU-Next` branch, tag or commit. Empty = `dev-susfs` |
-| **kernel_name** | Overrides the branding tag (default: `Arkael-X` for `6.12`, `Arkael-Dev` for `cass`) |
+| **kernel_name** | Overrides the branding tag (default: `Arkael-X` for `6.12`, `Arkael-Dev` for `6.12-susfs`, plus `-susfs`) |
 
 Locally (written for an Ubuntu runner, it uses `sudo apt-get` and `/home/runner/out`):
 
@@ -79,7 +79,7 @@ Locally (written for an Ubuntu runner, it uses `sudo apt-get` and `/home/runner/
 ```
 
 The script pulls the AOSP `android16-6.12` manifest, swaps `kernel/common` for
-[`arkael-kernel-a12-5.10`](https://github.com/Arkael-Dev/arkael-kernel-a12-5.10) (branch `6.12-linux` for `6.12`, `cass` for `cass`),
+[`arkael-kernel-a12-5.10`](https://github.com/Arkael-Dev/arkael-kernel-a12-5.10) (branch `6.12` for `6.12`, `6.12-susfs24` for `6.12-susfs`),
 applies the features above, builds both the Normal and the Bypass image, and packs them into an AnyKernel3 zip.
 
 <details>
@@ -92,7 +92,7 @@ applies the features above, builds both the Normal and the Bypass image, and pac
 ├── patches/
 │   ├── anykernel3-bypass.patch    # Normal / Bypass image menu for the installer
 │   ├── ksun-add-more-managers-support.patch   # extra manager signatures
-│   └── susfs-gki-6.12/            # SUSFS for gki-android16-6.12 (kernel side)
+│   └── susfs/                       # SUSFS apply scripts (skipped when kernel already has SUSFS)
 └── .github/workflows/build.yml    # "Build Arkael Kernel 6.12" workflow
 ```
 
