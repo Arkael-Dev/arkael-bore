@@ -4,7 +4,7 @@
 # Builds a GKI 6.12 kernel (android16) with KernelSU-Next, Baseband Guard,
 # DroidSpaces, NTSync and assorted config patches, then packages AnyKernel3.
 #
-# Usage: ./build.sh --target <6.12|cass> [options]
+# Usage: ./build.sh --target <6.12|6.12-susfs> [options]
 
 set -euo pipefail
 
@@ -40,10 +40,10 @@ SUSFS=0
 
 usage() {
   cat <<EOF
-Usage: $0 --target <6.12|cass> [options]
+Usage: $0 --target <6.12|6.12-susfs> [options]
 
 Options:
-  --target <6.12|cass>     Which kernel source branch to build (required)
+  --target <6.12|6.12-susfs>     Which kernel source branch to build (required)
   --ksu-branch <ref>       KernelSU-Next branch/commit (default: next tip)
   --kernel-name <tag>      Override branding tag (default: Arkael-Project or Arkael-Fork)
   --susfs                  Pasang SUSFS gki-android16-6.12 (hanya --target 6.12)
@@ -67,8 +67,8 @@ parse_args() {
     esac
   done
 
-  if [[ "$TARGET" != "6.12" && "$TARGET" != "cass" ]]; then
-    echo "ERROR: --target must be '6.12' or 'cass' (got: '${TARGET:-<empty>}')" >&2
+  if [[ "$TARGET" != "6.12" && "$TARGET" != "6.12-susfs" ]]; then
+    echo "ERROR: --target must be '6.12' or '6.12-susfs' (got: '${TARGET:-<empty>}')" >&2
     usage
     exit 1
   fi
@@ -103,9 +103,9 @@ KSU_GIT_TAG=""
 
 resolve_custom_branch() {
   if [[ "$TARGET" == "6.12" ]]; then
-    CUSTOM_BRANCH="6.12-susfs24"
+    CUSTOM_BRANCH="6.12"
   else
-    CUSTOM_BRANCH="cass"
+    CUSTOM_BRANCH="6.12-susfs24"
   fi
 }
 
@@ -563,7 +563,7 @@ setup_ntsync() {
 
 setup_susfs() {
   (( SUSFS )) || return 0
-  [[ "$TARGET" == "6.12" ]] || die "--susfs hanya didukung untuk --target 6.12 (patch gki-android16-6.12)"
+  [[ "$TARGET" == "6.12" || "$TARGET" == "6.12-susfs" ]] || die "--susfs hanya didukung untuk --target 6.12 (patch gki-android16-6.12)"
 
   local sdir="${PATCH_DIR}/susfs"
   [[ -f "${sdir}/apply-susfs.sh" ]] || die "${sdir}/apply-susfs.sh tidak ditemukan"
